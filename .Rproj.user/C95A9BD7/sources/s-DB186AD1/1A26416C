@@ -1,0 +1,23 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1561318110704.000,
+    "dirty" : false,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "0",
+    "id" : "1A26416C",
+    "lastKnownWriteTime" : 1561387509,
+    "last_content_update" : 1561387509462,
+    "path" : "~/Projects/reinforce/data-raw/test_dqn_snake.R",
+    "project_path" : "data-raw/test_dqn_snake.R",
+    "properties" : {
+        "cursorPosition" : "84,40",
+        "scrollLine" : "72",
+        "tempName" : "Untitled1"
+    },
+    "relative_order" : 4,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_source"
+}

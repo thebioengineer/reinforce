@@ -1,0 +1,23 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1561317122311.000,
+    "dirty" : false,
+    "encoding" : "UTF-8",
+    "folds" : "97|45|108|21|\n110|46|118|21|\n120|44|128|21|\n149|53|158|21|\n160|44|162|21|\n164|43|166|21|\n",
+    "hash" : "0",
+    "id" : "A448CD58",
+    "lastKnownWriteTime" : 1561351457,
+    "last_content_update" : 1561351457125,
+    "path" : "~/Projects/reinforce/R/snake.R",
+    "project_path" : "R/snake.R",
+    "properties" : {
+        "cursorPosition" : "146,35",
+        "scrollLine" : "143",
+        "tempName" : "Untitled1"
+    },
+    "relative_order" : 3,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_source"
+}
