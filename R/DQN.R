@@ -23,10 +23,10 @@ DQN<-setRefClass("DQN_agent",
                    },
 
 
-                   train_long=function(){
+                   train_long=function(len=1000){
 
-                     if( mem$nstates > 1000){
-                       minibatch = mem$sample(1000)
+                     if( mem$nstates > len){
+                       minibatch = mem$sample(len)
                      }else{
                        minibatch = mem$sample("all")
                      }
@@ -60,8 +60,8 @@ DQN<-setRefClass("DQN_agent",
 
                    },
 
-                   next_step=function(state){
-                     if(runif(1)<epsilon){
+                   next_step=function(state,randguess=TRUE){
+                     if(runif(1)<epsilon && randguess){
                        predictions<-runif(4)
                      }else{
                        predictions<-predict(model[[1]],state)

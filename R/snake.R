@@ -22,13 +22,14 @@ snake<-setRefClass("snake",
                      width="numeric",
                      board="matrix",
                      log="character",
+                     fruit_locations="list",
 
                      state_new="array"
                    ),
 
                    methods=list(
 
-                     init = function(height=20,width=20,seed=floor(runif(1)*100)){
+                     init = function(height=20,width=20,seed=floor(runif(1)*100), fruit_locs){
                        set.seed(seed)
                        body<<-matrix(c(floor(width/2),floor(height/2),floor(width/2),floor(height/2)-1),byrow = FALSE,ncol=2)
                        direction<<-sample(c("up","left","right"),1)
@@ -39,6 +40,9 @@ snake<-setRefClass("snake",
                        width<<-width
                        dead<<-FALSE
                        log<<-as.character(seed)
+                       if(!missing(fruit_locs)){
+                         fruit_locations<<-fruit_locs
+                       }
                        updatefood()
                        updateboard()
                        get_state()
@@ -96,6 +100,8 @@ snake<-setRefClass("snake",
                      },
 
                      updatefood = function(){
+                        #figure out how to pre-specify food?
+                       if(length(fruit_locations)==0){
                        pos<-sample(1:(width*height),1)
                        col<-ceiling(pos/height)
                        row<-pos%%height
@@ -105,6 +111,9 @@ snake<-setRefClass("snake",
                          updatefood()
                        }else{
                          food<<-c(col,row)
+                       }}else{
+                         food<<-fruit_locations[[1]]
+                         fruit_locations<<-fruit_locations[-1]
                        }
                      },
 
@@ -223,8 +232,12 @@ snake<-setRefClass("snake",
                        }
                      },
 
-                     replay = function(steps,seed,delay=.5){
-                       init(seed = seed)
+                     replay = function(steps,x2,delay=.5){
+                       if(is.numeric(x2)){
+                         init(seed = x2)
+                       }else{
+                         init(fruit_locs=x2)
+                       }
                        plotboard()
                        for(move in steps){
                          run_iter(move)
