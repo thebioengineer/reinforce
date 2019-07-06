@@ -39,7 +39,7 @@ record <- 0
 best_game <- 0
 records <- list()
 fruitPos<- list()
-while(counter_games < 20){
+while(counter_games < 2000){
   # Initialize classes
   snake_game$init()
   food1 = snake_game$food
@@ -73,22 +73,20 @@ while(counter_games < 20){
     score = snake_game$score_total
   }
 
-  dqn_agent$train_long(1000)
+  #retrain on all data available
+  dqn_agent$train_long(3000)
 
   cat("Game", counter_games, "\tScore:", score,"\n")
 
   records<-c(records,list(list(game=counter_games,score=score,log=snake_game$log,fruit_positions=fruitRecord)))
   counter_games <- counter_games + 1
-
 }
 
-dqn_agent$train_long()
-dqn_agent$train_long()
+save_model_hdf5(dqn_agent$mode
+                l[[1]],"snake_player_evenlonger.hd5")
 
-
-save_model_hdf5(dqn_agent$model[[1]],"snake_player_larger.hd5")
-
-saveRDS(dqn_agent,"snake_dqn2.rds")
+saveRDS(dqn_agent,"snake_dqn_longest.rds")
+saveRDS(records,"records_longest.rds")
 
 bestScore<-max(sapply(records,`[[`,2))
 bestPerf<-which.max(sapply(records,function(x)ifelse(x[[2]]==bestScore,length(x[[1]]),0)))
@@ -142,7 +140,7 @@ while(counter_games < 500){
 
   cat("Game", counter_games, "\tScore:", score,"\n")
 
-  dqn_agent2$train_long(5000)
+  dqn_agent2$train_long(100*counter_games)
 
   records<-c(records,list(list(game=counter_games,score=score,log=snake_game2$log,fruit_positions=fruitRecord)))
   counter_games <- counter_games + 1
@@ -164,3 +162,7 @@ res<-saveGIF(
 save_model_hdf5(dqn_agent2$model[[1]],"snake_player_larger2.hd5")
 
 saveRDS(dqn_agent2,"snake_dqn2.rds")
+saveRDS(records,"snake_dqn2_records.rds")
+
+
+
