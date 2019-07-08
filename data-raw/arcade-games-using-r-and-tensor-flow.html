@@ -204,18 +204,9 @@ $(document).ready(function () {
 
 <p>Reinforcement learning is an interesting technique where in the user gives a model a game state and requests that it produce some sort of reaction to the state. This action is then fed back into the model to generate the next state. If the result of this action is a positive reaction, it is recorded and the model is fit to imply this action is a good one. If the result is negative, the inverse.</p>
 <p>Eventually, after playing many games, the algorithm starts to make connections between states and the “correct” action to take.</p>
-<pre class="r"><code>nomnoml::nomnoml(&quot;
-[Model]-&gt;[Action]
-[Action]-&gt;[Game/Simulation]
-[Game/Simulation]-&gt;[reward]
-[Game/Simulation]-&gt;[state]
-[reward]-&gt;[Model]
-[state]-&gt;[Model]
-&quot;)</code></pre>
-<div id="htmlwidget-61ae7caa09bc1234d69c" style="width:672px;height:480px;" class="nomnoml html-widget"></div>
-<script type="application/json" data-for="htmlwidget-61ae7caa09bc1234d69c">{"x":{"code":"\n  #fill: #FEFEFF\n  #lineWidth: 1\n  #zoom: 4\n  #direction: right\n   \n[Model]->[Action]\n[Action]->[Game/Simulation]\n[Game/Simulation]->[reward]\n[Game/Simulation]->[state]\n[reward]->[Model]\n[state]->[Model]\n","svg":false},"evals":[],"jsHooks":[]}</script>
+<div id="htmlwidget-18c5babbeae114c8da82" style="width:672px;height:480px;" class="nomnoml html-widget"></div>
+<script type="application/json" data-for="htmlwidget-18c5babbeae114c8da82">{"x":{"code":"\n  #fill: #FEFEFF\n  #lineWidth: 1\n  #zoom: 4\n  #direction: right\n   \n[Model]->[Action]\n[Action]->[Game/Simulation]\n[Game/Simulation]->[reward]\n[Game/Simulation]->[state]\n[reward]->[Model]\n[state]->[Model]\n","svg":false},"evals":[],"jsHooks":[]}</script>
 <p>State. React. Reward.</p>
-<p>It is oddly similar to training my dog to do a trick.</p>
 <p>By repeating these steps thousands of times, the deep learning algorithm “learns” the rules of the game to great effect. There are currently lots of blogs and articles devoted to this type of machine learning available in python, but none in R. I decided it was time to both learn how to do this and record it for my fellow R programmers.</p>
 <p>At the end I was successful in training a simple densely connected model to play the classic game “Snake” quite well. Below are two gif’s. The gif on the left is the very first game it played, and the gif on the right is my final dense model’s best performance.</p>
 <div style="text-align:center">
