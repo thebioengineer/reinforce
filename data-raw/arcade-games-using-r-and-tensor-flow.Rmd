@@ -2,7 +2,7 @@
 title: "Arcade Games using R and TensorFlow"
 author: "Ellis Hughes"
 date: "`r Sys.Date()`"
-output: rmarkdown::html_vignette
+output: rmarkdown::html_document
 vignette: >
   %\VignetteIndexEntry{Vignette Title}
   %\VignetteEngine{knitr::rmarkdown}
@@ -21,18 +21,16 @@ Reinforcement learning is an interesting technique where in the user gives a mod
 
 Eventually, after playing many games, the algorithm starts to make connections between states and the "correct" action to take. 
 
-<!-- # ```{r eval=TRUE} -->
-<!-- #  -->
-<!-- # nomnoml::nomnoml(" -->
-<!-- # [Model]->[Action] -->
-<!-- # [Action]->[Game/Simulation] -->
-<!-- # [Game/Simulation]->[reward] -->
-<!-- # [Game/Simulation]->[state] -->
-<!-- # [reward]->[Model] -->
-<!-- # [state]->[Model] -->
-<!-- # ") -->
-<!-- #  -->
-<!-- # ``` -->
+```{r eval=TRUE}
+nomnoml::nomnoml("
+[Model]->[Action]
+[Action]->[Game/Simulation]
+[Game/Simulation]->[reward]
+[Game/Simulation]->[state]
+[reward]->[Model]
+[state]->[Model]
+")
+```
 
 State. React. Reward. 
 
@@ -40,29 +38,33 @@ It is oddly similar to training my dog to do a trick.
 
 By repeating these steps thousands of times, the deep learning algorithm "learns" the rules of the game to great effect. There are currently lots of blogs and articles devoted to this type of machine learning available in python, but none in R. I decided it was time to both learn how to do this and record it for my fellow R programmers. 
 
-At the end I was successful in training a simple densely connected model to play the classic game "Snake" quite well. Below is a gif of my final dense model playing the snake:
+At the end I was successful in training a simple densely connected model to play the classic game "Snake" quite well. Below are two gif's. The gif on the left is the very first game it played, and the gif on the right is my final dense model's best performance.
 
-![](../init_animation_longer_645.gif)
+<div style="text-align:center">
+  <img src="../init_animation_early.gif" style="width:40%"/>
+  <img src="../init_animation_longer_645.gif" style="width:40%"/>
+</div>
 
 ## Getting Started
 
-My experience with deep learning is based on reading the [Deep Learning in R](https://www.manning.com/books/deep-learning-with-r) book by François Chollet with J. J. Allaire and playing with LSTM models in my free time. Thankfully, I found several very helpful posts online that I used to help develop my programs. Keon Kim's blog contained a very useful introduction to reinforcement learning in ['Deep Q-Learning with Keras and Gym'](https://keon.io/deep-q-learning/), and Mauro Como's article ['How to teach AI to play Games: Deep Reinforcement Learning'](https://towardsdatascience.com/how-to-teach-an-ai-to-play-games-deep-reinforcement-learning-28f9b920440a) helped me develop my framework. 
+My experience with deep learning is based on reading the [Deep Learning in R](https://www.manning.com/books/deep-learning-with-r) book by François Chollet with J. J. Allaire. Thankfully, I found several very helpful posts online that I used to help develop my programs. Keon Kim's blog contained a very useful introduction to reinforcement learning in ['Deep Q-Learning with Keras and Gym'](https://keon.io/deep-q-learning/), and Mauro Como's article ['How to teach AI to play Games: Deep Reinforcement Learning'](https://towardsdatascience.com/how-to-teach-an-ai-to-play-games-deep-reinforcement-learning-28f9b920440a) helped me develop my framework. Finally, I reviewed the paper from [the DeepMind team](https://storage.googleapis.com/deepmind-media/dqn/DQNNaturePaper.pdf), which really helped my understanding of the algorithm and design decisions made.
 
 ## Deep Q Network
 
-At the heart of the training is the Deep Q Network (DQN) algorithm. The idea is that we have a function (Q) that given a state and an action, can predict whether there will be a reward. Putting this in terms of the snake game, if the head of the snake is just to the left of the food, the move that is most likely to give it a reward would be to move to the right.
+At the heart of the training is the Deep Q Network (DQN) algorithm. The idea is that we have a function (Q) that given a state, give an action to maximize the reward. Putting this in terms of the snake game, if the head of the snake is just to the left of the food, the move that is most likely to give it a reward would be to move to the right.
 
 Over time, the Q function is updated as is has more and more new information about the game and it sees it being played as a series of states. The Q function in a DQN is a deep learning algorithm. 
 
-
 I created a refclass called "DQN_agent", that served as the framework for serving my models. It was surprisingly simple to set up, as there are not a lot of states for it to handle. I also created an object made to hold all the information needed to train each step and the methods, called "memory".
 
-### Memory Refclass
+#### Memory Refclass
 
 Refclasses can be a bit funny, but essentially it has field for containing data, and methods. They behave more similarly to other languages objects in that they are edited in-place. This memory refclass has field for each of the bits of information needed to train the model: current state, next state, action, reward and whether the game game is done or not. It also has a field for the number of states it holds to make things simpler. 
 
 It also has methods for adding more data and sampling the outputs. Unless you are working with the DQN agent, it is unlikely you will work directly with this class.
 
+<details>
+  <summary>Toggle For Code</summary>
 ```{r memory}
 
 memory<-setRefClass("memory",
@@ -107,9 +109,9 @@ memory<-setRefClass("memory",
 
 
 ```
+</details>
 
-
-### DQN_agent Refclass
+#### DQN_agent Refclass
 
 Similarly to the memory refclass, the DQN_agent has fields for the model, and information/settings required for training the model. You might notice that one of the fields is actually holding a memory refclass object. 
 
@@ -123,7 +125,7 @@ There are a few more methods for this class than for memory, but it boils down t
 6. next_step is the method for producing an action to take based on the trained model.
 
 
-#### DQN Training
+##### DQN Training
 
 I will take a moment to discuss the training in both train_long and train_on, as they both perform similar work. Based on reading several other posts on the subject, it appears this is a standard way to train the model. Essentially the training is done a single step at a time, so no "batches" as is done in traditional deep learning.
 
@@ -141,6 +143,8 @@ For each state, the training goes as follows:
   
 The idea is that you are getting what the model predicts should be the next best step and reinforcing if it was a good step positively or negatively.
 
+<details>
+  <summary>Toggle For Code</summary>
 ```{r DQN_agent}
 
 DQN<-setRefClass("DQN_agent",
@@ -226,15 +230,17 @@ DQN<-setRefClass("DQN_agent",
 
 
 ```
+</details>
 
-## Snake Simulator
+### Snake Simulator
 
 Next step is to actualy write the program to perform the simulation. You might already have a simulator set up, where you are able to feed in an action and it can give you back a perfect result. In my case I decided to write my own snake code. This is based off the [gridgame](https://github.com/bsspirit/gridgame) package by Conan Zhang, but naturally with my own flair and changes to output what I want. 
 
 Thankfully snake is a rather simple game to program, and the rules are not too complicated. I was able to write out the code in a few hours. The biggest changes I found were that it can iterate though the game, outputing the stateof the game, and a reward. 
 
 Feel free to inspect the code below.
-
+<details>
+  <summary>Toggle For Code</summary>
 ```{r snake_refclass}
 
 snake<-setRefClass("snake",
@@ -528,11 +534,13 @@ snake<-setRefClass("snake",
 
 
 ```
+</details>
 
-## Keras and Deep Learning
+### Keras and Deep Learning
 
 The simplest model we could use, especially based on the type of state output would be a densely connected model with several hidden layers. Dropout layers will be added to prevent over-fitting and training. I used the rmsprop optimizer because it appeared to perform better than the ADAM optimizer used by other posts.
-
+<details>
+  <summary>Toggle For Code</summary>
 ```{r deep_model}
 
 library(keras)
@@ -561,8 +569,9 @@ snake_model %>% compile(
 )
 
 ```
+</details>
 
-## Putting It All Together
+### Putting It All Together
 
 Now that I have everything defined in my refclasses, we can now start the process of training the model. It is actually surprisingly simple now that we have set everything up. We simply initialize all the objects, and loop over games. A cat statement will print out the results of the game.
 

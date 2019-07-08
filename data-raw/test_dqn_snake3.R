@@ -4,21 +4,43 @@ source("R/snake.R")
 source("R/memory.R")
 source("R/DQN.R")
 
-snake_model <- keras_model_sequential()
+snake_model_input <- layer_input(shape = c(12))
 
-snake_model %>%
-  layer_dense(units = 256, activation = 'relu',input_shape = c(12)) %>%
+snake_model_base <- snake_model_input %>%
+  layer_dense(units = 512, activation = 'relu') %>%
   layer_dropout(0.1) %>%
   layer_dense(256, activation='relu') %>%
   layer_dropout(0.1) %>%
+  layer_dense(256,activation = "relu")
+
+
+snake_model_arm1<-snake_model_base%>%
   layer_dense(256,activation = "relu")%>%
   layer_dropout(0.1) %>%
   layer_dense(256,activation = "relu")%>%
   layer_dropout(0.1) %>%
-  layer_dense(256,activation = "relu")%>%
+  # layer_dense(256,activation = "relu")%>%
+  # layer_dropout(0.1) %>%
+  # layer_dense(256,activation = "relu")%>%
+  layer_dense(256,activation = "relu")
+
+snake_model_arm2<-snake_model_base%>%
+  layer_dense(128,activation = "relu")%>%
   layer_dropout(0.1) %>%
-  layer_dense(256,activation = "relu")%>%
+  layer_dense(128,activation = "relu")%>%
+  layer_dropout(0.1) %>%
+  # layer_dense(128,activation = "relu")%>%
+  # layer_dropout(0.1) %>%
+  # layer_dense(128,activation = "relu")%>%
+  layer_dense(128,activation = "relu")
+
+
+snake_model_output<-layer_concatenate(list(snake_model_arm1,
+                                    snake_model_arm2)) %>%
   layer_dense(4,activation = "softmax")
+
+
+snake_model<-keras_model(snake_model_input,snake_model_output)
 
 optimizer <- optimizer_rmsprop(lr = 0.0005)
 
@@ -82,8 +104,9 @@ while(counter_games < 2000){
   counter_games <- counter_games + 1
 }
 
-save_model_hdf5(dqn_agent$mode
-                l[[1]],"snake_player_evenlonger.hd5")
+
+
+save_model_hdf5(dqn_agent$model[[1]],"snake_player_evenlonger.hd5")
 
 saveRDS(dqn_agent,"snake_dqn_longest.rds")
 saveRDS(records,"records_longest.rds")
@@ -164,13 +187,5 @@ save_model_hdf5(dqn_agent2$model[[1]],"snake_player_larger2.hd5")
 saveRDS(dqn_agent2,"snake_dqn2.rds")
 saveRDS(records,"snake_dqn2_records.rds")
 
-steps<-records[[1]][[3]]
-fruit_locs<-records[[1]][[4]]
-
-snake_game$replay(steps[-1],fruit_locs,delay = .1)
-res<-saveGIF(
-  snake_game$replay(steps[-1],fruit_locs,delay = .001),
-  movie.name = "init_animation_early.gif",
-  interval= .07)
 
 

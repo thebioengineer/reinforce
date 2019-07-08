@@ -141,11 +141,12 @@ snake<-setRefClass("snake",
 
                        state<-state_new
 
+
                        get_state()
 
                        list(
                          state=state,
-                         reward=reward,
+                         reward=reward_tminus,
                          action=array(as.numeric(c("up","down","left","right")%in%direction),dim = c(1,4)),
                          done=dead,
                          state_new=state_new)

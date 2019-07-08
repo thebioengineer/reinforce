@@ -7,10 +7,7 @@ source("R/DQN.R")
 snake_model <- keras_model_sequential()
 
 snake_model %>%
-  layer_conv_2d(filters = 64, kernel_size = c(2,2), activation = 'relu', input_shape = c(20,20,1)) %>%
-  layer_conv_2d(filters = 64, kernel_size = c(2,2), activation = 'relu') %>%
-  layer_max_pooling_2d(pool_size = c(2, 2)) %>%
-  layer_conv_2d(filters = 64, kernel_size = c(2,2), activation = 'relu') %>%
+  layer_conv_2d(filters = 64, kernel_size = c(4,4), activation = 'relu', input_shape = c(20,20,1)) %>%
   layer_conv_2d(filters = 64, kernel_size = c(2,2), activation = 'relu') %>%
   layer_max_pooling_2d(pool_size = c(2, 2)) %>%
   layer_dropout(rate = 0.1) %>%
@@ -22,7 +19,7 @@ snake_model %>%
   layer_dense(256,activation = "relu")%>%
   layer_dense(4,activation = "softmax")
 
-optimizer <- optimizer_rmsprop(lr = 0.0005)
+optimizer <- optimizer_rmsprop(lr = 0.005)
 
 snake_model %>% compile(
   loss = "mse",
@@ -76,7 +73,7 @@ while(counter_games < 200){
   }
 
   #retrain on all data available
-  dqn_agent$train_long(1000)
+  dqn_agent$train_long(2000)
 
   cat("Game", counter_games, "\tScore:", score,"\n")
 
