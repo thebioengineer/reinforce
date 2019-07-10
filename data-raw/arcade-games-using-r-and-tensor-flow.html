@@ -205,8 +205,8 @@ $(document).ready(function () {
 
 <p>Reinforcement learning is an interesting technique where in the user gives a model a game state and requests that it produce some sort of reaction to the state. This action is then fed back into the model to generate the next state. If the result of this action is a positive reaction, it is recorded and the model is fit to imply this action is a good one. If the result is negative, the inverse.</p>
 <p>Eventually, after playing many games, the algorithm starts to make connections between states and the “correct” action to take.</p>
-<div id="htmlwidget-0439c6987992910f3858" style="width:672px;height:480px;" class="nomnoml html-widget"></div>
-<script type="application/json" data-for="htmlwidget-0439c6987992910f3858">{"x":{"code":"\n  #fill: #FEFEFF\n  #lineWidth: 1\n  #zoom: 4\n  #direction: right\n   \n[Model]->[Action]\n[Action]->[Game/Simulation]\n[Game/Simulation]->[reward]\n[Game/Simulation]->[state]\n[reward]->[Model]\n[state]->[Model]\n","svg":false},"evals":[],"jsHooks":[]}</script>
+<div id="htmlwidget-1d7c5e330e5b3f51e954" style="width:672px;height:480px;" class="nomnoml html-widget"></div>
+<script type="application/json" data-for="htmlwidget-1d7c5e330e5b3f51e954">{"x":{"code":"\n  #fill: #FEFEFF\n  #lineWidth: 1\n  #zoom: 4\n  #direction: right\n   \n[Model]->[Action]\n[Action]->[Game/Simulation]\n[Game/Simulation]->[reward]\n[Game/Simulation]->[state]\n[reward]->[Model]\n[state]->[Model]\n","svg":false},"evals":[],"jsHooks":[]}</script>
 <p>State. React. Reward.</p>
 <p>By repeating these steps thousands of times, the deep learning algorithm “learns” the rules of the game to great effect. There are currently lots of blogs and articles devoted to this type of machine learning available in python, but none in R. I decided it was time to both learn how to do this and record it for my fellow R programmers.</p>
 <p>The intention of this piece is to give an introduction to reinforcement learning. At the end I was successful in training a simple densely connected model to play the classic game “Snake” using a smaller set of parameters traditionally used in reinforcement learning. Below are two gif’s. The gif on the left is the very first game it played, and the gif on the right is my final dense model’s best performance.</p>
@@ -314,8 +314,8 @@ N
 <p>If the state is state 2, the 3 actions have a probability of .001,.034 and .9 of returning a reward. So the q function will select <code>Action 3</code>.</p>
 <p>Now as we never actually know the “true” Q function, it is updated over time given the new information gathered about the environment and the states. The “deep” part of the DQN agent is that Q function is a deep learning algorithm as opposed to an a table of types.</p>
 <p>I created a refclass called “DQN_agent”, that served as the framework for serving my models. It was surprisingly simple to set up, as there are not a lot of states for it to handle. I also created an object made to hold all the information needed to train each step and the methods, called “memory”.</p>
-<div id="memory-refclass" class="section level4">
-<h4>Memory Refclass</h4>
+<div id="memory-refclass" class="section level3">
+<h3>Memory Refclass</h3>
 <p>Refclasses can be a bit funny, but essentially it has field for containing data, and methods. They behave more similarly to other languages objects in that they are edited in-place. This memory refclass has field for each of the bits of information needed to train the model: current state, next state, action, reward and whether the game game is done or not. It also has a field for the number of states it holds to make things simpler.</p>
 <p>It also has methods for adding more data and sampling the outputs. Unless you are working with the DQN agent, it is unlikely you will work directly with this class.</p>
 <p><details> <summary>Toggle For Code</summary></p>
@@ -362,8 +362,8 @@ memory&lt;-setRefClass(&quot;memory&quot;,
 </code></pre>
 <p></details></p>
 </div>
-<div id="dqn_agent-refclass" class="section level4">
-<h4>DQN_agent Refclass</h4>
+<div id="dqn_agent-refclass" class="section level3">
+<h3>DQN_agent Refclass</h3>
 <p>Similarly to the memory refclass, the DQN_agent has fields for the model, and information/settings required for training the model. You might notice that one of the fields is actually holding a memory refclass object.</p>
 <p>There are a few more methods for this class than for memory, but it boils down to this:</p>
 <ol style="list-style-type: decimal">
@@ -459,7 +459,7 @@ DQN&lt;-setRefClass(&quot;DQN_agent&quot;,
 <div id="dqn-training" class="section level5">
 <h5>DQN Training</h5>
 <p>I will take a moment to discuss the training in the train_long and train_on methods in the DQN_agent, as they both perform similar tasks (training), but are implemented at different times. The key step is that train_on is implemented within the game at each iteration. This trains the model inside the game so it can learn, but it will only be trained on a single iteration at a time. The train_long method trains the model on a randomly selected N subset of the total states that exist in memory. This is implemented at the end of the game to train the model on data it has already seen to hopefully speed up the learning process.</p>
-<p>The actual training of the model is performed a single “state” at a time, andgoes as follows:</p>
+<p>The actual training of the model is performed a single “state” at a time, and goes as follows:</p>
 <pre><code>1. Acquire state, feed into model to get a prediction
 2. Set the &quot;reward&quot; to be the recorded reward from the game
 3. If the game is not over, update the &quot;reward&quot; on the following:
@@ -474,14 +474,14 @@ DQN&lt;-setRefClass(&quot;DQN_agent&quot;,
 </div>
 <div id="snake-simulator" class="section level3">
 <h3>Snake Simulator</h3>
-<p>Next step is to actualy write the program to perform the simulation. You might already have a simulator set up, where you are able to feed in an action and it can give you back a perfect result. In my case I decided to write my own snake code. This is based off the <a href="https://github.com/bsspirit/gridgame">gridgame</a> package by Conan Zhang, but with my changes to make it available for training using a DQN.</p>
-<p>Thankfully snake is a rather simple game to program, and the rules are not too complicated. I was able to write out the code in a few hours. The biggest changes from the classic game is that now it will ask for an input for an action after each time it moved rather than moving a specific direction until it was ordered to do differently. This was mainly for simplicity on my part as R is not natually multi-threaded and thus can only perform a single computation at a time. The code is available in a gist <a href="https://gist.github.com/thebioengineer/01816be5b590b9d44e77abbb87eaf179">here</a></p>
-<p>Upon inspection of the snake code, you will find that I also chose to limit the information I let the snake game reveal after each step. In most reiforcement learning scenarios, the status of all the pixels in the entire screen is returned to the model. In this implementation I shared the direction of the food (is it up, down, left or right of the head), which direction is “danger” that would cause the game to end, and what is the current direction that the snake is headed. I found this was easier to train the model, since I was feeding it the direct information it would need.</p>
+<p>Next step is to actually write the program to perform the simulation. You might already have a simulator set up, where you are able to feed in an action and it can give you back a perfect result. In my case I decided to write my own snake code. This is based off the <a href="https://github.com/bsspirit/gridgame">gridgame</a> package by Conan Zhang, but with my changes to make it available for training using a DQN.</p>
+<p>Thankfully snake is a rather simple game to program, and the rules are not too complicated. I was able to write out the code in a few hours. The biggest changes from the classic game is that now it will ask for an input for an action after each time it moved rather than moving a specific direction until it was ordered to do differently. This was mainly for simplicity on my part as R is not naturally multi-threaded and thus can only perform a single computation at a time. The code is available in a gist <a href="https://gist.github.com/thebioengineer/01816be5b590b9d44e77abbb87eaf179">here</a></p>
+<p>Upon inspection of the snake code, you will find that I also chose to limit the information I let the snake game reveal after each step. In most reinforcement learning scenarios, the status of all the pixels in the entire screen is returned to the model. In this implementation I shared the direction of the food (is it up, down, left or right of the head), which direction is “danger” that would cause the game to end, and what is the current direction that the snake is headed. I found this was easier to train the model, since I was feeding it the direct information it would need.</p>
 </div>
 <div id="keras-and-deep-learning" class="section level3">
 <h3>Keras and Deep Learning</h3>
 <p>The simplest model we could use, especially based on the type of state output would be a densely connected network. Each state was an array of 1 x 12, so the input_shape of the model is 12. There are 4 potential actions (up,down,left,right), so the last layer is a softmax output with 4 nodes.</p>
-<p>After some trial and error, I determined that limiting the number of nodes at each layer to 256 and having 6 hidden layers resulted in a model that learned the fastest. I found the optimizer_rmsprop resulted in the fastest learning model, though I know there are people that perfer optimizer_adam.</p>
+<p>After some trial and error, I determined that limiting the number of nodes at each layer to 256 and having 6 hidden layers resulted in a model that learned the fastest. I found the optimizer_rmsprop resulted in the fastest learning model, though I know there are people that prefer optimizer_adam.</p>
 <pre class="r"><code>
 library(keras)
 
@@ -612,8 +612,8 @@ res&lt;-saveGIF(
 </div>
 <div id="additional-resources" class="section level2">
 <h2>Additional Resources</h2>
-<p>Thank you so much for taking the time to read this and hopefully this gives you some more understanding on how to implement reinforcement learning in R. This is a rapidly developing field, and this algorithm already has many improvements that exist! In addition, Google has released a framework called <a href="https://github.com/google/dopamine">Dopamine</a> on github to help make reinfocement learning more accessible.</p>
-<p>In conclusion, I believe reinforcement learning has many more avenues for growth than just playing videogames at super-human levels, and I am excited to explore and see where things go next.</p>
+<p>Thank you so much for taking the time to read this and hopefully this gives you some more understanding on how to implement reinforcement learning in R. This is a rapidly developing field, and this algorithm already has many improvements that exist! In addition, Google has released a framework called <a href="https://github.com/google/dopamine">Dopamine</a> on github to help make reinforcement learning more accessible.</p>
+<p>In conclusion, I believe reinforcement learning has many more avenues for growth than just playing video games at super-human levels, and I am excited to explore and see where things go next.</p>
 </div>
 
 

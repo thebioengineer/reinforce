@@ -74,7 +74,7 @@ Now as we never actually know the "true" Q function, it is updated over time giv
 
 I created a refclass called "DQN_agent", that served as the framework for serving my models. It was surprisingly simple to set up, as there are not a lot of states for it to handle. I also created an object made to hold all the information needed to train each step and the methods, called "memory".
 
-#### Memory Refclass
+### Memory Refclass
 
 Refclasses can be a bit funny, but essentially it has field for containing data, and methods. They behave more similarly to other languages objects in that they are edited in-place. This memory refclass has field for each of the bits of information needed to train the model: current state, next state, action, reward and whether the game game is done or not. It also has a field for the number of states it holds to make things simpler. 
 
@@ -128,7 +128,7 @@ memory<-setRefClass("memory",
 ```
 </details>
 
-#### DQN_agent Refclass
+### DQN_agent Refclass
 
 Similarly to the memory refclass, the DQN_agent has fields for the model, and information/settings required for training the model. You might notice that one of the fields is actually holding a memory refclass object. 
 
@@ -235,7 +235,7 @@ DQN<-setRefClass("DQN_agent",
 
 I will take a moment to discuss the training in the train_long and train_on methods in the DQN_agent, as they both perform similar tasks (training), but are implemented at different times. The key step is that train_on is implemented within the game at each iteration. This trains the model inside the game so it can learn, but it will only be trained on a single iteration at a time. The train_long method trains the model on a randomly selected N subset of the total states that exist in memory. This is implemented at the end of the game to train the model on data it has already seen to hopefully speed up the learning process. 
 
-The actual training of the model is performed a single "state" at a time, andgoes as follows:
+The actual training of the model is performed a single "state" at a time, and goes as follows:
 ```
 1. Acquire state, feed into model to get a prediction
 2. Set the "reward" to be the recorded reward from the game
@@ -253,17 +253,17 @@ The idea is that you are getting what the model predicts should be the next best
 
 ### Snake Simulator
 
-Next step is to actualy write the program to perform the simulation. You might already have a simulator set up, where you are able to feed in an action and it can give you back a perfect result. In my case I decided to write my own snake code. This is based off the [gridgame](https://github.com/bsspirit/gridgame) package by Conan Zhang, but with my changes to make it available for training using a DQN.
+Next step is to actually write the program to perform the simulation. You might already have a simulator set up, where you are able to feed in an action and it can give you back a perfect result. In my case I decided to write my own snake code. This is based off the [gridgame](https://github.com/bsspirit/gridgame) package by Conan Zhang, but with my changes to make it available for training using a DQN.
 
-Thankfully snake is a rather simple game to program, and the rules are not too complicated. I was able to write out the code in a few hours. The biggest changes from the classic game is that now it will ask for an input for an action after each time it moved rather than moving a specific direction until it was ordered to do differently. This was mainly for simplicity on my part as R is not natually multi-threaded and thus can only perform a single computation at a time. The code is available in a gist [here](https://gist.github.com/thebioengineer/01816be5b590b9d44e77abbb87eaf179)
+Thankfully snake is a rather simple game to program, and the rules are not too complicated. I was able to write out the code in a few hours. The biggest changes from the classic game is that now it will ask for an input for an action after each time it moved rather than moving a specific direction until it was ordered to do differently. This was mainly for simplicity on my part as R is not naturally multi-threaded and thus can only perform a single computation at a time. The code is available in a gist [here](https://gist.github.com/thebioengineer/01816be5b590b9d44e77abbb87eaf179)
 
-Upon inspection of the snake code, you will find that I also chose to limit the information I let the snake game reveal after each step. In most reiforcement learning scenarios, the status of all the pixels in the entire screen is returned to the model. In this implementation I shared the direction of the food (is it up, down, left or right of the head), which direction is "danger" that would cause the game to end, and what is the current direction that the snake is headed. I found this was easier to train the model, since I was feeding it the direct information it would need.
+Upon inspection of the snake code, you will find that I also chose to limit the information I let the snake game reveal after each step. In most reinforcement learning scenarios, the status of all the pixels in the entire screen is returned to the model. In this implementation I shared the direction of the food (is it up, down, left or right of the head), which direction is "danger" that would cause the game to end, and what is the current direction that the snake is headed. I found this was easier to train the model, since I was feeding it the direct information it would need.
 
 ### Keras and Deep Learning
 
 The simplest model we could use, especially based on the type of state output would be a densely connected network. Each state was an array of 1 x 12, so the input_shape of the model is 12. There are 4 potential actions (up,down,left,right), so the last layer is a softmax output with 4 nodes. 
 
-After some trial and error, I determined that limiting the number of nodes at each layer to 256 and having 6 hidden layers resulted in a model that learned the fastest. I found the optimizer_rmsprop resulted in the fastest learning model, though I know there are people that perfer optimizer_adam.
+After some trial and error, I determined that limiting the number of nodes at each layer to 256 and having 6 hidden layers resulted in a model that learned the fastest. I found the optimizer_rmsprop resulted in the fastest learning model, though I know there are people that prefer optimizer_adam.
 
 ```{r deep_model}
 
@@ -405,6 +405,6 @@ res<-saveGIF(
 
 ## Additional Resources
 
-Thank you so much for taking the time to read this and hopefully this gives you some more understanding on how to implement reinforcement learning in R. This is a rapidly developing field, and this algorithm already has many improvements that exist! In addition, Google has released a framework called [Dopamine](https://github.com/google/dopamine) on github to help make reinfocement learning more accessible. 
+Thank you so much for taking the time to read this and hopefully this gives you some more understanding on how to implement reinforcement learning in R. This is a rapidly developing field, and this algorithm already has many improvements that exist! In addition, Google has released a framework called [Dopamine](https://github.com/google/dopamine) on github to help make reinforcement learning more accessible. 
 
-In conclusion, I believe reinforcement learning has many more avenues for growth than just playing videogames at super-human levels, and I am excited to explore and see where things go next. 
+In conclusion, I believe reinforcement learning has many more avenues for growth than just playing video games at super-human levels, and I am excited to explore and see where things go next. 
