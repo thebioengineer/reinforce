@@ -36,7 +36,7 @@ State. React. Reward.
 
 By repeating these steps thousands of times, the deep learning algorithm "learns" the rules of the game to great effect. There are currently lots of blogs and articles devoted to this type of machine learning available in python, but none in R. I decided it was time to both learn how to do this and record it for my fellow R programmers. 
 
-At the end I was successful in training a simple densely connected model to play the classic game "Snake" quite well. Below are two gif's. The gif on the left is the very first game it played, and the gif on the right is my final dense model's best performance.
+The intention of this piece is to give an introduction to reinforcement learning. At the end I was successful in training a simple densely connected model to play the classic game "Snake" using a smaller set of parameters traditionally used in reinforcement learning. Below are two gif's. The gif on the left is the very first game it played, and the gif on the right is my final dense model's best performance.
 
 <div style="text-align:center">
   <img src="../init_animation_early.gif" style="width:40%"/>
@@ -51,7 +51,26 @@ My experience with deep learning is based on reading the [Deep Learning in R](ht
 
 At the heart of the training is the Deep Q Network (DQN) algorithm. The idea is that we have a function (Q) that given a state, give an action to maximize the reward. Putting this in terms of the snake game, if the head of the snake is just to the left of the food, the move that is most likely to give it a reward would be to move to the right.
 
-Over time, the Q function is updated as is has more and more new information about the game and it sees it being played as a series of states. The Q function in a DQN is a deep learning algorithm. 
+The Q function is a concept that is actually fairly straight forward. Given a state, it will have probabilities of selecting a specific action that will give it some reward. Whichever the highest probability is, the Q function will select that action. So, given the table below, where there are 3 actions and N states,
+
+```{r echo=FALSE, eval=TRUE,warning=FALSE}
+
+library(kableExtra)
+
+q<-data.frame("State"=c("1","2","3","...","N"),
+           "Action 1"=c(".5",".25",".001","...",".0125"),
+           "Action 2"=c(".01",".68",".034","...",".645"),
+           "Action 3"=c(".063",".005",".9","...",".631"))
+names(q)<-c("State","Action 1","Action 2","Action 3")
+
+kable_styling(kable(q,row.names = FALSE,format = "html"),bootstrap_options = "striped", full_width = F)
+
+
+```
+
+If the state is state 2, the 3 actions have a probability of .001,.034 and .9 of returning a reward. So the q function will select `Action 3`. 
+
+Now as we never actually know the "true" Q function, it is updated over time given the new information gathered about the environment and the states. The "deep" part of the DQN agent is that Q function is a deep learning algorithm as opposed to an a table of types.
 
 I created a refclass called "DQN_agent", that served as the framework for serving my models. It was surprisingly simple to set up, as there are not a lot of states for it to handle. I also created an object made to hold all the information needed to train each step and the methods, called "memory".
 
@@ -121,25 +140,6 @@ There are a few more methods for this class than for memory, but it boils down t
 4. train_long is the method to train the model on potentially all the available data (or a subset) within the memory object.
 5. train_on is the method to train the model on a specific state/next_state pairing. 
 6. next_step is the method for producing an action to take based on the trained model.
-
-
-##### DQN Training
-
-I will take a moment to discuss the training in both train_long and train_on, as they both perform similar work. Based on reading several other posts on the subject, it appears this is a standard way to train the model. Essentially the training is done a single step at a time, so no "batches" as is done in traditional deep learning.
-
-For each state, the training goes as follows:
-
-  1. Acquire state, feed into model to get a prediction
-  2. Set the "reward" to be the recorded reward from the game
-  3. If the game is not over, update the "reward" on the following:
-    3.1 Predict the next action based on the next state (get probabilities for each "action"")
-    3.2 Multiply the most likely probability by gamma
-    3.3 Add the result to the "reward"
-  4. Based on the current state, predict the next action (get probabilities for each "action")
-  5. Get the actual action was was performed, and replace the prediction probability of the current state next action with the reward value
-  6. Train the model on an epoch of 1, and batchsize of 1, based on the current state as the inputs and the updated prediction probabilities as the outputs
-  
-The idea is that you are getting what the model predicts should be the next best step and reinforcing if it was a good step positively or negatively.
 
 <details>
   <summary>Toggle For Code</summary>
@@ -230,315 +230,41 @@ DQN<-setRefClass("DQN_agent",
 ```
 </details>
 
+
+##### DQN Training
+
+I will take a moment to discuss the training in the train_long and train_on methods in the DQN_agent, as they both perform similar tasks (training), but are implemented at different times. The key step is that train_on is implemented within the game at each iteration. This trains the model inside the game so it can learn, but it will only be trained on a single iteration at a time. The train_long method trains the model on a randomly selected N subset of the total states that exist in memory. This is implemented at the end of the game to train the model on data it has already seen to hopefully speed up the learning process. 
+
+The actual training of the model is performed a single "state" at a time, andgoes as follows:
+```
+1. Acquire state, feed into model to get a prediction
+2. Set the "reward" to be the recorded reward from the game
+3. If the game is not over, update the "reward" on the following:
+  3.1 Predict the next action based on the next state (get probabilities for each "action"")
+  3.2 Multiply the most likely probability by gamma
+  3.3 Add the result to the "reward"
+4. Based on the current state, predict the next action (get probabilities for each "action")
+5. Get the actual action was was performed, and replace the prediction probability of the current state next action with the reward value
+6. Train the model on an epoch of 1, and batchsize of 1, based on the current state as the inputs and the updated prediction probabilities as the outputs
+```
+  
+The idea is that you are getting what the model predicts should be the next best step and reinforcing if it was a good step positively or negatively.
+
+
 ### Snake Simulator
 
-Next step is to actualy write the program to perform the simulation. You might already have a simulator set up, where you are able to feed in an action and it can give you back a perfect result. In my case I decided to write my own snake code. This is based off the [gridgame](https://github.com/bsspirit/gridgame) package by Conan Zhang, but naturally with my own flair and changes to output what I want. 
+Next step is to actualy write the program to perform the simulation. You might already have a simulator set up, where you are able to feed in an action and it can give you back a perfect result. In my case I decided to write my own snake code. This is based off the [gridgame](https://github.com/bsspirit/gridgame) package by Conan Zhang, but with my changes to make it available for training using a DQN.
 
-Thankfully snake is a rather simple game to program, and the rules are not too complicated. I was able to write out the code in a few hours. The biggest changes I found were that it can iterate though the game, outputing the stateof the game, and a reward. 
+Thankfully snake is a rather simple game to program, and the rules are not too complicated. I was able to write out the code in a few hours. The biggest changes from the classic game is that now it will ask for an input for an action after each time it moved rather than moving a specific direction until it was ordered to do differently. This was mainly for simplicity on my part as R is not natually multi-threaded and thus can only perform a single computation at a time. The code is available in a gist [here](https://gist.github.com/thebioengineer/01816be5b590b9d44e77abbb87eaf179)
 
-Feel free to inspect the code below.
-<details>
-  <summary>Toggle For Code</summary>
-```{r snake_refclass}
-
-snake<-setRefClass("snake",
-                   fields=list(
-                     # System variables
-                     body="matrix",
-                     food = "numeric",
-                     direction='character',
-                     length="numeric",
-                     dead="logical",
-
-                     #game info
-                     score_total="numeric",
-                     reward="numeric",
-                     height="numeric",
-                     width="numeric",
-                     board="matrix",
-                     log="character",
-                     fruit_locations="list",
-
-                     state_new="array"
-                   ),
-
-                   methods=list(
-
-                     init = function(height=20,width=20,
-                                     seed=floor(runif(1)*100),fruit_locs){
-                       
-                       set.seed(seed)
-                       body<<-matrix(c(floor(width/2),
-                                       floor(height/2),
-                                       floor(width/2),
-                                       floor(height/2)-1),
-                                     byrow = FALSE,ncol=2)
-                       direction<<-sample(c("up","left","right"),1)
-                       reward<<-0
-                       score_total<<-0
-                       length<<-2
-                       height<<-height
-                       width<<-width
-                       dead<<-FALSE
-                       log<<-as.character(seed)
-                       if(!missing(fruit_locs)){
-                         fruit_locations<<-fruit_locs
-                       }
-                       updatefood()
-                       updateboard()
-                       get_state()
-
-                     },
-
-                     stepforward = function(){
-                       reward<<-0
-                       nextloc<-nextstep()
-
-                       dist_fruit_orig<-sqrt(((food[1]-body[1,1])^2) + 
-                                               (food[2]-body[1,2])^2)
-                       dist_fruit_next<-sqrt(((food[1]-nextloc[1])^2) +
-                                               (food[2]-nextloc[2])^2)
-                       
-                       reward<<-ifelse(dist_fruit_orig>dist_fruit_next,
-                                       10,-10)
-                       #check if nextLoc is body or wall, if so, fail
-                       isbody<-any(do.call('c',lapply(1:nrow(body),function(x){
-                         all(body[x,]==nextloc)
-                         })))
-                       iswall<-any(nextloc%in%c(-1,height+1,width+1))
-                       if(isbody || iswall){die()}
-                       #check if nextloc is food
-                       isfood=all(food==nextloc)
-                       if(isfood){
-                         length<<-length+1
-                         score_total  <<- score_total + 
-                           ((floor(log(length))+1) * 5)
-                         reward <<- 20
-                         updatefood()
-                       }
-
-                       updatebody(nextloc)
-                       if(!dead){
-                         updateboard()
-                       }
-                     },
-                     nextstep = function(direct){
-                       switch(direction,
-                              "up"=c(0,1),
-                              "down"=c(0,-1),
-                              "left"=c(-1,0),
-                              "right"=c(1,0))+body[1,]
-
-                     },
-                     updatebody = function(nextloc){
-                       bod<-as.numeric(body)
-                       if(length>nrow(body)){
-                         body<<-matrix(c(nextloc[1],
-                                         bod[1:nrow(body)],
-                                         nextloc[2],
-                                         bod[(nrow(body)+1):(2*nrow(body))]),
-                                       byrow=FALSE,ncol=2)
-                       }else{
-                         body<<-matrix(c(nextloc[1],
-                                         bod[1:(nrow(body)-1)],
-                                         nextloc[2],
-                                         bod[(nrow(body)+1):((2*nrow(body))-1)]),
-                                       byrow=FALSE,ncol=2)
-                       }
-                     },
-
-                     updatefood = function(){
-                        #figure out how to pre-specify food?
-                       if(length(fruit_locations)==0){
-                       pos<-sample(1:(width*height),1)
-                       col<-ceiling(pos/height)
-                       row<-pos%%height
-
-                       isbody<-any(
-                         do.call('c',
-                                 lapply(1:nrow(body),
-                                        function(x){
-                                          all(body[x,]==c(col,row))
-                                          })))
-                       if(isbody){
-                         updatefood()
-                       }else{
-                         food<<-c(col,row)
-                       }}else{
-                         food<<-fruit_locations[[1]]
-                         fruit_locations<<-fruit_locations[-1]
-                       }
-                     },
-
-                     updateboard = function(){
-                       boardtemp<-matrix(rep(0,width*height),nrow=width)
-                       boardtemp[body[1,2],body[1,1]]<-2
-                       for(snake_segment in seq(2,length)){
-                         boardtemp[body[snake_segment,2],
-                                   body[snake_segment,1]]<-1
-                       }
-                       boardtemp[food[2],food[1]]<-3
-                       board<<-boardtemp
-                     },
-
-                     plotboard = function(){
-                       par(mar=c(0, 0, 1, 0), xaxs='i', yaxs='i')
-                       plot(-1,-1,xlim=c(0,width+1),ylim=c(0,height+1),
-                            type='n',axes=FALSE, frame.plot=TRUE)
-                       Axis(side=1, labels=FALSE)
-                       Axis(side=2, labels=FALSE)
-                       points(body[,1],body[,2],
-                              col=c("blue",rep('black',length-1)),pch=15,cex=2)
-                       points(food[1],food[2],col="red",pch=16,cex=2)
-                       title(main = paste("SNAKE! score -",score_total))
-                     },
-
-                     returnstatus = function(){
-
-                       state<-state_new
-
-                       get_state()
-
-                       list(
-                         state=state,
-                         reward=reward,
-                         action=array(
-                           as.numeric(c("up","down","left","right")%in%
-                                        direction),dim = c(1,4)),
-                         done=dead,
-                         state_new=state_new)
-                     },
-
-                     die = function(){
-                       dead<<-TRUE
-                       reward<<-(-20)
-                     },
-
-                     updatedirection = function(dir){
-                       if(missing(dir)){
-                         line<-readline("snakedir: a,w,s,d")
-                         print(line)
-                         dir<-switch(tolower(line),
-                                     "a"="left",
-                                     "w"="up",
-                                     "s"="down",
-                                     "d"="right",
-                                     direction)
-                       }
-                       if(dir!=direction & okayDir(dir)){
-                         direction<<-dir
-                       }
-                     },
-
-                     updateLog = function(){
-                       log<<-c(log,direction)
-                     },
-
-                     okayDir=function(dir){
-                       dir!=switch(direction,
-                                   "right"="left",
-                                   "down"="up",
-                                   "up"="down",
-                                   "left"="right")
-                     },
-
-                     get_state=function(){
-
-                       danger<-vector("numeric",4)
-                       i<-1
-                       for(nextdir in c("up","down","left","right")){
-                         nextpos<-switch(nextdir,
-                                         "up"=c(0,1),
-                                         "down"=c(0,-1),
-                                         "left"=c(-1,0),
-                                         "right"=c(1,0))+body[1,]
-                         danger_body<-as.numeric(any(
-                           do.call('c',lapply(1:nrow(body),
-                                              function(x){
-                                                all(body[x,]==nextpos)
-                                                }))))
-                         danger_wall<-as.numeric(
-                           any(nextpos%in%c(-1,nrow(board)+1,ncol(board)+1)))
-                         danger[i]<-sum(c(danger_body,danger_wall))>0
-                         i<-i+1
-                       }
-
-                       dirFruit<-as.numeric(c(body[1,1]<food[1],
-                                              body[1,1]>food[1],
-                                              body[1,2]<food[2],
-                                              body[1,2]>food[2]))
-
-                       movement <- switch(direction,
-                                          "up"=c(1,0,0,0),
-                                          "down"=c(0,1,0,0),
-                                          "left"=c(0,0,1,0),
-                                          "right"=c(0,0,0,1))
-
-                       state_new<<-array(c(danger,dirFruit,movement),
-                                         dim = c(1,12))
-                     },
-
-
-                     run = function(return_info=TRUE,plot_board=FALSE,delay=.3){
-                       init()
-                       if(plot_board){plotboard()}
-                       if(return_info){returnstatus()}
-                       updatedirection()
-                       while(!dead){
-
-                         stepforward()
-                         plotboard()
-                         if(plot_board){plotboard()}
-                         if(return_info){returnstatus()}
-                         if(!dead){updatedirection()}
-                       }
-                       text(floor(width/2),
-                            floor(height/2),
-                            labels = "GAME OVER",
-                            col="red",cex=3)
-                     },
-
-                     run_iter = function(dir,returnStatus=FALSE){
-                       if(missing(dir)){
-                         dir<-direction
-                       }
-                       if(!dead){
-                         updatedirection(dir)
-                         stepforward()
-                         updateLog()
-                       }else{
-                         return("DEAD")
-                       }
-
-                       if(returnStatus){
-                         returnstatus()
-                       }
-                     },
-                     replay = function(steps,x2,delay=.5){
-                       if(is.numeric(x2)){
-                         init(seed = x2)
-                       }else{
-                         init(fruit_locs=x2)
-                       }
-                       plotboard()
-                       for(move in steps){
-                         run_iter(move)
-                         plotboard()
-                         Sys.sleep(delay)
-                       }
-                     }
-                   )
-)
-
-
-```
-</details>
+Upon inspection of the snake code, you will find that I also chose to limit the information I let the snake game reveal after each step. In most reiforcement learning scenarios, the status of all the pixels in the entire screen is returned to the model. In this implementation I shared the direction of the food (is it up, down, left or right of the head), which direction is "danger" that would cause the game to end, and what is the current direction that the snake is headed. I found this was easier to train the model, since I was feeding it the direct information it would need.
 
 ### Keras and Deep Learning
 
-The simplest model we could use, especially based on the type of state output would be a densely connected model with several hidden layers. Dropout layers will be added to prevent over-fitting and training. I used the rmsprop optimizer because it appeared to perform better than the ADAM optimizer used by other posts.
-<details>
-  <summary>Toggle For Code</summary>
+The simplest model we could use, especially based on the type of state output would be a densely connected network. Each state was an array of 1 x 12, so the input_shape of the model is 12. There are 4 potential actions (up,down,left,right), so the last layer is a softmax output with 4 nodes. 
+
+After some trial and error, I determined that limiting the number of nodes at each layer to 256 and having 6 hidden layers resulted in a model that learned the fastest. I found the optimizer_rmsprop resulted in the fastest learning model, though I know there are people that perfer optimizer_adam.
+
 ```{r deep_model}
 
 library(keras)
@@ -567,12 +293,14 @@ snake_model %>% compile(
 )
 
 ```
-</details>
 
 ### Putting It All Together
 
-Now that I have everything defined in my refclasses, we can now start the process of training the model. It is actually surprisingly simple now that we have set everything up. We simply initialize all the objects, and loop over games. A cat statement will print out the results of the game.
+Now that I have everything defined in my refclasses, we can now start the process of training the model. It is actually surprisingly simple now that we have set everything up. We simply initialize all the refclasses as objects, and loop over games. I use a while counter to limit the number of games played to 200.
 
+Within the while loop, another loop goes until the game ends - when snake_game$dead is `TRUE`. The inner loop is where each state is run though the model to get an action, that action results in a step forward in the game. The states, action, and reward of the game is recorded and the Deep Q function is trained on this new information.
+
+Once the game ends, a cat statement logs the game and score, and the Deep Q function is retrained on a subset of the data to speed up the process. Scores, states and actions are recorded for replay and examination for later.
 
 ```{r training}
 
@@ -586,7 +314,7 @@ record <- 0
 best_game <- 0
 records <- list()
 fruitPos<- list()
-while(counter_games < 2000){
+while(counter_games < 200){
   # Initialize classes
   snake_game$init()
   food1 = snake_game$food
@@ -673,9 +401,10 @@ res<-saveGIF(
   movie.name = "snake_animation.gif",
   interval= .07)
 
-
-
-
 ```
 
+## Additional Resources
 
+Thank you so much for taking the time to read this and hopefully this gives you some more understanding on how to implement reinforcement learning in R. This is a rapidly developing field, and this algorithm already has many improvements that exist! In addition, Google has released a framework called [Dopamine](https://github.com/google/dopamine) on github to help make reinfocement learning more accessible. 
+
+In conclusion, I believe reinforcement learning has many more avenues for growth than just playing videogames at super-human levels, and I am excited to explore and see where things go next. 
